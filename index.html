@@ -34,6 +34,7 @@
       </div>
     </div>
     <div class="hud-actions">
+      <button type="button" id="btn-meeting" class="hud-btn" title="Réunir plusieurs agents en discussion groupée">🤝 Réunion</button>
       <button type="button" id="btn-overview" class="hud-btn" title="Revenir à la vue d'ensemble">🗺️ Vue d'ensemble</button>
       <button type="button" id="btn-settings" class="hud-btn" title="Configurer l'API">⚙️ Réglages</button>
     </div>
@@ -47,6 +48,14 @@
     <span>👋 Bienvenue ! Pour discuter avec l'équipe, connectez d'abord votre API (Hermes, Open WebUI, Ollama…).</span>
     <button type="button" id="banner-settings" class="hud-btn accent">⚙️ Configurer</button>
     <button type="button" id="banner-close" class="banner-x" aria-label="Fermer">✕</button>
+  </div>
+
+  <!-- Barre du mode réunion -->
+  <div id="meeting-bar" role="toolbar" aria-label="Préparer une réunion">
+    <span class="meeting-icon">🤝</span>
+    <span id="meeting-count">Cliquez sur les collaborateurs à réunir</span>
+    <button type="button" id="meeting-start" class="hud-btn accent" disabled>▶ Démarrer la réunion</button>
+    <button type="button" id="meeting-cancel" class="hud-btn">Annuler</button>
   </div>
 
   <!-- Barre d'équipe (accès rapide + secours mobile) -->

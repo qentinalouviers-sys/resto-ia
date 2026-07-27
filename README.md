@@ -184,6 +184,10 @@ Le décor se modifie dans `js/office.js`, les personnages dans `js/characters.js
 - 🏢 Open space derrière la cloison végétalisée : bureaux, écrans animés par métier,
   néon, baies vitrées avec ville nocturne, borne d'arcade, machine à café, plantes…
 - 🖱️ Survolez un personnage → il s'illumine ; cliquez → la caméra zoome et le chat s'ouvre
+- 🤝 **Mode Réunion** : bouton « Réunion », sélectionnez plusieurs collaborateurs (anneau
+  lumineux à leurs pieds), puis lancez la discussion groupée — chaque agent donne son avis
+  à tour de rôle selon ses compétences, sans répéter les autres, et si Nova participe elle
+  conclut par une synthèse et les prochaines étapes
 - 💬 Streaming des réponses en direct, rendu Markdown (code, listes, titres)
 - 🗂️ Une conversation mémorisée par agent (localStorage), bouton « nouvelle conversation »
 - 📱 Responsive : barre d'équipe en bas de l'écran pour accès rapide (et secours sans WebGL)

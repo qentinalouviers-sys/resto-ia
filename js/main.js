@@ -7,7 +7,7 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { AGENTS, getAgent } from './agents.js';
 import { createCharacter } from './characters.js';
 import { buildOffice, buildLights } from './office.js';
-import { initChat, openChat, closeChat, isChatOpen } from './chat.js';
+import { initChat, openChat, openMeeting, closeChat, isChatOpen } from './chat.js';
 import { initSettingsUI, loadSettings, isConfigured } from './settings.js';
 
 const canvasHost = document.getElementById('scene');
@@ -30,14 +30,90 @@ initChat({
 });
 
 const teamBar = document.getElementById('team-bar');
+const chipEls = new Map();
 for (const agent of AGENTS) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'team-chip';
   btn.style.setProperty('--accent', agent.accent);
   btn.innerHTML = `<span class="chip-emoji">${agent.emoji}</span><span class="chip-txt"><strong>${agent.nom}</strong><small>${agent.role}</small></span>`;
-  btn.addEventListener('click', () => selectAgent(agent.id));
+  btn.addEventListener('click', () => {
+    if (selectionMode) toggleSelect(agent.id);
+    else selectAgent(agent.id);
+  });
   teamBar.appendChild(btn);
+  chipEls.set(agent.id, btn);
+}
+
+// --- Mode Réunion : sélection des participants -------------------
+const MEETING_MEMBERS_KEY = 'restoia.reunion.membres';
+let selectionMode = false;
+const selectedIds = new Set();
+let setRing = () => {}; // fourni par init3D quand la 3D est active
+
+const meetingBar = document.getElementById('meeting-bar');
+const meetingCount = document.getElementById('meeting-count');
+const meetingStart = document.getElementById('meeting-start');
+
+document.getElementById('btn-meeting').addEventListener('click', () => {
+  selectionMode ? exitSelection() : enterSelection();
+});
+document.getElementById('meeting-cancel').addEventListener('click', exitSelection);
+meetingStart.addEventListener('click', startMeeting);
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && selectionMode) exitSelection();
+});
+
+function enterSelection() {
+  if (isChatOpen()) closeChat();
+  selectionMode = true;
+  selectedIds.clear();
+  // re-propose les participants de la dernière réunion
+  try {
+    for (const id of JSON.parse(localStorage.getItem(MEETING_MEMBERS_KEY)) || []) {
+      if (getAgent(id)) selectedIds.add(id);
+    }
+  } catch (_) { /* pas de réunion précédente */ }
+  document.body.classList.add('selecting');
+  meetingBar.classList.add('visible');
+  refreshSelectionUI();
+}
+
+function exitSelection() {
+  selectionMode = false;
+  document.body.classList.remove('selecting');
+  meetingBar.classList.remove('visible');
+  selectedIds.clear();
+  refreshSelectionUI();
+}
+
+function toggleSelect(id) {
+  selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+  refreshSelectionUI();
+}
+
+function refreshSelectionUI() {
+  for (const agent of AGENTS) {
+    const on = selectedIds.has(agent.id);
+    chipEls.get(agent.id)?.classList.toggle('selected', on);
+    setRing(agent.id, on && selectionMode);
+  }
+  const n = selectedIds.size;
+  meetingCount.textContent = n === 0
+    ? 'Cliquez sur les collaborateurs à réunir'
+    : `${n} participant${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''}`;
+  meetingStart.disabled = n < 2;
+}
+
+function startMeeting() {
+  const members = [...selectedIds].map(getAgent).filter(Boolean);
+  if (members.length < 2) return;
+  try {
+    localStorage.setItem(MEETING_MEMBERS_KEY, JSON.stringify(members.map((m) => m.id)));
+  } catch (_) { /* stockage indisponible */ }
+  exitSelection();
+  focusOverview();
+  openMeeting(members);
 }
 
 if (!isConfigured(loadSettings())) {
@@ -115,6 +191,28 @@ function init3D() {
     characters.push(ch);
     pickables.push(ch.group);
   }
+
+  // Anneaux de sélection (mode réunion) aux pieds des personnages
+  const rings = new Map();
+  for (const ch of characters) {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.42, 0.56, 28),
+      new THREE.MeshBasicMaterial({
+        color: ch.agent.accent, transparent: true, opacity: 0.85,
+        side: THREE.DoubleSide, depthWrite: false,
+      })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.03;
+    ring.visible = false;
+    ring.userData.agentId = ch.agent.id;
+    ch.group.add(ring);
+    rings.set(ch.agent.id, ring);
+  }
+  setRing = (id, on) => {
+    const r = rings.get(id);
+    if (r) r.visible = on;
+  };
 
   // --- Caméra : intro + focus agent -----------------------------
   const OVERVIEW = { pos: new THREE.Vector3(7.4, 5.0, 9.2), target: new THREE.Vector3(0, 0.9, 0) };
@@ -200,7 +298,9 @@ function init3D() {
   renderer.domElement.addEventListener('pointerup', (e) => {
     if (pointerDown.moved) return; // c'était une rotation de caméra
     const id = pick(e.clientX, e.clientY);
-    if (id) selectAgent(id);
+    if (!id) return;
+    if (selectionMode) toggleSelect(id);
+    else selectAgent(id);
   });
 
   window.addEventListener('resize', () => {
@@ -226,6 +326,11 @@ function init3D() {
 
     controls.update();
     for (const ch of characters) ch.update(dt, camera);
+    // pulsation douce des anneaux de sélection
+    const tt = clock.elapsedTime;
+    for (const r of rings.values()) {
+      if (r.visible) r.material.opacity = 0.6 + 0.3 * Math.sin(tt * 3.2);
+    }
     renderer.render(scene, camera);
 
     if (firstFrame) {

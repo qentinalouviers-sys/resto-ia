@@ -143,6 +143,49 @@ body.chat-open #hint { display: none; }
 .chip-txt strong { font-size: 13px; }
 .chip-txt small { font-size: 10.5px; color: var(--text-dim); }
 
+/* --- Mode réunion ---------------------------------------------- */
+#meeting-bar {
+  position: fixed; bottom: 96px; left: 50%; transform: translate(-50%, 16px);
+  z-index: 27; display: flex; align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--accent);
+  border-radius: var(--radius); padding: 10px 16px; font-size: 13.5px;
+  backdrop-filter: blur(12px); box-shadow: var(--shadow);
+  max-width: min(94vw, 680px); opacity: 0; visibility: hidden;
+  transition: all 0.3s ease;
+}
+#meeting-bar.visible { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+.meeting-icon { font-size: 20px; }
+#meeting-count { color: var(--text-dim); white-space: nowrap; }
+#meeting-start:disabled { opacity: 0.45; cursor: not-allowed; }
+
+body.selecting #scene { cursor: copy; }
+body.selecting .team-chip { outline: 1px dashed rgba(139, 92, 246, 0.5); }
+.team-chip.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), 0 6px 18px rgba(0, 0, 0, 0.45);
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel-solid));
+}
+.team-chip.selected .chip-emoji::after { content: ' ✓'; font-size: 11px; }
+
+/* Bulles de réunion : bandeau nom/rôle coloré par agent */
+.bubble.group { border-left: 3px solid var(--who, var(--accent)); padding-top: 8px; }
+.bubble .who {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 6px; padding-bottom: 5px;
+  border-bottom: 1px solid rgba(139, 148, 178, 0.15);
+}
+.bubble .who strong { color: var(--who, var(--accent)); font-size: 13px; }
+.bubble .who span { color: var(--text-dim); font-size: 11px; }
+.chat-welcome .participants {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  margin-bottom: 10px;
+}
+.participant {
+  border: 1px solid var(--accent); border-radius: 99px;
+  padding: 3px 10px; font-size: 12.5px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 /* --- Info-bulle ------------------------------------------------ */
 #tooltip {
   position: fixed; z-index: 40; pointer-events: none;
