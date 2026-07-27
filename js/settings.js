@@ -53,6 +53,29 @@ const DEFAULTS = {
   temperature: 0.7,
 };
 
+// Appelé une fois au démarrage : si le localStorage est vide,
+// charge les réglages depuis /default-settings.json (servi par le VPS).
+// Résout le problème iOS où le localStorage HTTP est vidé régulièrement.
+export async function initDefaultSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.apiKey && s.model) return; // déjà configuré
+    }
+  } catch (_) {}
+
+  try {
+    const res = await fetch('/default-settings.json');
+    if (res.ok) {
+      const server = await res.json();
+      if (server.apiKey && server.model) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(server));
+      }
+    }
+  } catch (_) { /* réseau indisponible, tant pis */ }
+}
+
 export function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

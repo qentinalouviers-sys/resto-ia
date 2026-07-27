@@ -8,7 +8,11 @@ import { AGENTS, getAgent } from './agents.js';
 import { createCharacter, createDog } from './characters.js';
 import { buildOffice, buildLights } from './office.js';
 import { initChat, openChat, openMeeting, closeChat, isChatOpen } from './chat.js';
-import { initSettingsUI, loadSettings, isConfigured } from './settings.js';
+import { initSettingsUI, initDefaultSettings, loadSettings, isConfigured } from './settings.js';
+
+// Récupère les réglages depuis le serveur si le localStorage est vide
+// (iOS efface le localStorage en HTTP → l'utilisateur perd sa config)
+await initDefaultSettings();
 
 const canvasHost = document.getElementById('scene');
 const loadingEl = document.getElementById('loading');
