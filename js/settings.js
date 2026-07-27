@@ -10,8 +10,8 @@ export const PRESETS = {
   vps: {
     label: 'Mon Hermes Agent (ce serveur)',
     baseUrl: '/v1',
-    model: 'hermes',
-    hint: 'Interface servie par votre VPS : /v1 est relayé vers Hermes. Clé = API_SERVER_KEY (affichée par install-vps.sh). « Tester la connexion » remplit le modèle automatiquement.',
+    model: 'hermes-agent',
+    hint: 'Interface servie par votre VPS : /v1 est relayé vers Hermes (modèle deepseek-v4-pro ou hermes-agent). Clé = API_SERVER_KEY (affichée par install-vps.sh). « Tester la connexion » remplit le modèle automatiquement.',
   },
   hermes: {
     label: 'Hermes — Nous Research (cloud)',

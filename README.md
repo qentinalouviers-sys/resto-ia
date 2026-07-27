@@ -100,12 +100,25 @@ server {
     index index.html;
 
     location /v1/ {
+        # CORS : le navigateur envoie un preflight OPTIONS avant chaque POST
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+        if ($request_method = 'OPTIONS') { return 204; }
+
+        proxy_set_header Origin "";  # l'API Hermes rejette le header Origin
+
         proxy_pass http://127.0.0.1:8642/v1/;
+        proxy_http_version 1.1;
         proxy_buffering off;         # nécessaire pour le streaming SSE
         proxy_read_timeout 300s;
     }
 }
 ```
+
+> ℹ️ Le script vérifie aussi le modèle par défaut du gateway (`~/.hermes/config.yaml`) :
+> s'il détecte `kimi-k3` (clé invalide → erreur 401), il bascule automatiquement sur
+> `deepseek-v4-pro`.
 
 Dans ⚙️ Réglages, l'URL de base devient alors `http://<ip-du-vps>/v1`.
 

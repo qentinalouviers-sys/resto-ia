@@ -9,6 +9,8 @@
 #      relaie /v1 vers le serveur API d'Hermes Agent (127.0.0.1:8642)
 #   4. Active le serveur API dans ~/.hermes/.env
 #      (génère une clé API_SERVER_KEY si besoin)
+#   5. Corrige le modèle par défaut du gateway si c'est kimi-k3
+#      (clé invalide → 401) vers deepseek-v4-pro
 #
 #  Usage (en root, ou avec sudo) :
 #    bash install-vps.sh
@@ -32,7 +34,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # ------------------------------------------------------------
-bleu "── Étape 1/4 · Outils nécessaires (git, nginx, openssl)"
+bleu "── Étape 1/5 · Outils nécessaires (git, nginx, openssl)"
 if command -v apt-get >/dev/null 2>&1; then
   $SUDO apt-get update -qq || true
   $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git nginx openssl curl >/dev/null
@@ -46,7 +48,7 @@ fi
 ok "Outils prêts"
 
 # ------------------------------------------------------------
-bleu "── Étape 2/4 · Téléchargement de l'interface"
+bleu "── Étape 2/5 · Téléchargement de l'interface"
 if [ -d "$WEB_DIR/.git" ]; then
   $SUDO git -C "$WEB_DIR" fetch origin "$BRANCH" --depth 1
   $SUDO git -C "$WEB_DIR" checkout "$BRANCH" >/dev/null 2>&1 || true
@@ -59,8 +61,9 @@ else
 fi
 
 # ------------------------------------------------------------
-bleu "── Étape 3/4 · Configuration de nginx"
-NGINX_CONF='server {
+bleu "── Étape 3/5 · Configuration de nginx"
+NGINX_CONF=$(cat <<'NGINX'
+server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
@@ -68,13 +71,28 @@ NGINX_CONF='server {
     index index.html;
 
     location /v1/ {
+        # CORS : le navigateur envoie un preflight OPTIONS avant chaque POST
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+
+        # Preflight → 204 sans passer par l'API Hermes
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }
+
+        # L'API Hermes rejette le header Origin : on le retire avant de relayer
+        proxy_set_header Origin "";
+
         proxy_pass http://127.0.0.1:8642/v1/;
         proxy_http_version 1.1;
         proxy_buffering off;          # indispensable pour le streaming des réponses
         proxy_read_timeout 300s;
         proxy_set_header Host $host;
     }
-}'
+}
+NGINX
+)
 if [ -d /etc/nginx/sites-available ]; then
   printf '%s\n' "$NGINX_CONF" | $SUDO tee /etc/nginx/sites-available/resto-ia >/dev/null
   $SUDO rm -f /etc/nginx/sites-enabled/default
@@ -92,7 +110,7 @@ else
 fi
 
 # ------------------------------------------------------------
-bleu "── Étape 4/4 · Activation du serveur API d'Hermes Agent"
+bleu "── Étape 4/5 · Activation du serveur API d'Hermes Agent"
 HERMES_ENV=""
 for h in "$HOME" /root /home/*; do
   if [ -f "$h/.hermes/.env" ]; then HERMES_ENV="$h/.hermes/.env"; break; fi
@@ -118,6 +136,31 @@ if [ -n "$HERMES_ENV" ]; then
 else
   warn "Fichier ~/.hermes/.env introuvable sur cette machine."
   warn "Ajoutez-y vous-même :  API_SERVER_ENABLED=true  et  API_SERVER_KEY=<une-clé-secrète>"
+fi
+
+# ------------------------------------------------------------
+bleu "── Étape 5/5 · Modèle par défaut du gateway Hermes"
+# Correctif du 27/07/2026 : le modèle kimi-k3 (provider kimi-coding)
+# a une clé invalide → 401 sur tous les appels. On bascule sur DeepSeek.
+HERMES_CFG=""
+for h in "$HOME" /root /home/*; do
+  if [ -f "$h/.hermes/config.yaml" ]; then HERMES_CFG="$h/.hermes/config.yaml"; break; fi
+done
+if [ -n "$HERMES_CFG" ] && grep -q 'kimi-k3' "$HERMES_CFG"; then
+  $SUDO cp "$HERMES_CFG" "$HERMES_CFG.bak.$(date +%s)"
+  if command -v hermes >/dev/null 2>&1 \
+    && hermes config set model.default deepseek-v4-pro >/dev/null 2>&1 \
+    && hermes config set model.provider deepseek >/dev/null 2>&1; then
+    ok "Modèle corrigé via hermes config : deepseek-v4-pro (kimi-k3 → clé invalide)"
+  else
+    $SUDO sed -i 's/^\(\s*default:\s*\)kimi-k3\s*$/\1deepseek-v4-pro/; s/^\(\s*provider:\s*\)kimi-coding\s*$/\1deepseek/' "$HERMES_CFG"
+    ok "Modèle corrigé dans $HERMES_CFG : deepseek-v4-pro (kimi-k3 → clé invalide)"
+  fi
+  warn "Pensez à redémarrer le gateway Hermes pour appliquer le changement."
+elif [ -n "$HERMES_CFG" ]; then
+  ok "Modèle par défaut OK (pas de kimi-k3 dans config.yaml)"
+else
+  warn "~/.hermes/config.yaml introuvable — vérification du modèle ignorée."
 fi
 
 # ------------------------------------------------------------
