@@ -136,6 +136,14 @@ else
   warn "Ajoutez-y vous-même :  API_SERVER_ENABLED=true  et  API_SERVER_KEY=<une-clé-secrète>"
 fi
 
+# Écrire le fichier de réglages par défaut pour l'interface
+# (résout le problème iOS : localStorage HTTP vidé → clé perdue)
+if [ -n "$API_KEY" ]; then
+  printf '{\n  "preset": "vps",\n  "baseUrl": "/v1",\n  "apiKey": "%s",\n  "model": "deepseek-v4-pro",\n  "temperature": 0.7\n}\n' "$API_KEY" \
+    | $SUDO tee "$WEB_DIR/default-settings.json" >/dev/null
+  ok "Fichier default-settings.json créé (auto-configuration de l'interface)"
+fi
+
 # ------------------------------------------------------------
 bleu "── Étape 5/5 · Vérification du modèle Hermes (DeepSeek requis)"
 FIXED_MODEL=false
