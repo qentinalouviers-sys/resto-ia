@@ -29,10 +29,10 @@ plusieurs agents à tour de rôle.
 
 | Fichier | Rôle |
 |---|---|
-| `js/agents.js` | ⭐ Config des 10 agents (prompts FR, avatars, positions) |
-| `js/characters.js` | Personnages 3D procéduraux (coiffures, accessoires : toque, tablier, plateau…) |
-| `js/office.js` | Décor : restaurant (four napolitain doré, comptoir, tables) + open space |
-| `js/chat.js` | Chat solo + mode Réunion (tour de table, Nova synthétise en dernier), streaming SSE |
+| `js/agents.js` | ⭐ Config des 7 agents (prompts FR, avatars, positions) : Anibal (boss, `boss: true`), Yohan (pizzaïolo), Justine (comptable), Eva (juriste), Théo (marketing), Hugo (commercial), Sébastien (travaux, `zone: 'chantier'`) |
+| `js/characters.js` | Personnages 3D procéduraux (coiffures, accessoires : toque, casque de chantier, tablier…) + `createDog()` : Joy, le labrador noir décoratif |
+| `js/office.js` | Décor : restaurant (four napolitain doré, comptoir, tables) + open space + coin chantier |
+| `js/chat.js` | Chat solo + mode Réunion (tour de table, l'agent `boss: true` synthétise en dernier), streaming SSE |
 | `js/settings.js` | Réglages API (localStorage), préréglages, test de connexion |
 | `js/main.js` | Caméra, interactions souris/tactile, sélection réunion, boucle de rendu |
 | `install-vps.sh` | Installation/mise à jour complète sur le VPS (5 étapes) |

@@ -98,6 +98,16 @@ function buildAccessories(head, torso, acc, headR, accent, cfg) {
     puff.scale.y = 0.62;
     head.add(base, puff);
   }
+  if (acc.hardhat) {
+    const hm = mat(0xf5c211, { roughness: 0.45 });
+    const casque = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.02, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52), hm);
+    casque.position.y = headR * 0.22;
+    const visiere = new THREE.Mesh(new THREE.CylinderGeometry(headR * 1.12, headR * 1.18, headR * 0.09, 20), hm);
+    visiere.position.y = headR * 0.18;
+    const crete = new THREE.Mesh(new THREE.BoxGeometry(headR * 0.22, headR * 0.14, headR * 1.5), hm);
+    crete.position.y = headR * 0.98;
+    head.add(casque, visiere, crete);
+  }
   if (acc.apron) {
     const am = mat(cfg?.apronColor ?? 0x8a2f2f, { roughness: 0.95 });
     const bib = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.34, 0.02), am);
@@ -341,6 +351,107 @@ export function createCharacter(agent) {
       label.material.opacity = 0.75 + h * 0.25;
       const s = 1 + h * 0.1;
       label.scale.set(1.5 * s, 0.42 * s, 1);
+      if (camera) label.quaternion.copy(camera.quaternion);
+    },
+  };
+}
+
+// --- Joy, le labrador noir (mascotte décorative) ---------------
+// Simple personnage : pas de chat, pas de clic — il vit sa vie.
+export function createDog(name = 'Joy') {
+  const group = new THREE.Group();
+  group.name = 'dog-joy';
+  const furM = mat(0x191a1e, { roughness: 0.9 });
+  const furM2 = mat(0x24252b, { roughness: 0.9 });
+
+  // corps (capsule horizontale)
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.34, 6, 12), furM);
+  body.rotation.x = Math.PI / 2;
+  body.position.set(0, 0.34, 0);
+  body.castShadow = true;
+  group.add(body);
+
+  // tête + museau + truffe (le chien regarde vers -Z, comme les humains)
+  const head = new THREE.Group();
+  const crane = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), furM);
+  crane.castShadow = true;
+  head.add(crane);
+  const museau = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.09, 4, 10), furM2);
+  museau.rotation.x = Math.PI / 2;
+  museau.position.set(0, -0.035, -0.13);
+  head.add(museau);
+  const truffe = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), mat(0x0a0a0c, { roughness: 0.3 }));
+  truffe.position.set(0, -0.02, -0.2);
+  head.add(truffe);
+  // yeux marron
+  const eyeGeo = new THREE.SphereGeometry(0.02, 8, 8);
+  const eyeM = mat(0x4a2e18, { roughness: 0.25 });
+  const eL = new THREE.Mesh(eyeGeo, eyeM); eL.position.set(-0.055, 0.045, -0.105);
+  const eR = new THREE.Mesh(eyeGeo, eyeM); eR.position.set(0.055, 0.045, -0.105);
+  head.add(eL, eR);
+  // oreilles tombantes de labrador
+  for (const side of [-1, 1]) {
+    const oreille = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.07, 4, 8), furM2);
+    oreille.position.set(side * 0.115, 0.05, -0.01);
+    oreille.rotation.z = side * 0.55;
+    head.add(oreille);
+  }
+  head.position.set(0, 0.52, -0.24);
+  group.add(head);
+
+  // collier rouge
+  const collier = new THREE.Mesh(new THREE.TorusGeometry(0.095, 0.022, 8, 16), mat(0xc22e2e, { roughness: 0.5 }));
+  collier.rotation.x = Math.PI / 2 + 0.5;
+  collier.position.set(0, 0.44, -0.19);
+  group.add(collier);
+
+  // pattes
+  const legGeo = new THREE.CapsuleGeometry(0.042, 0.16, 4, 8);
+  for (const [lx, lz] of [[-0.09, -0.14], [0.09, -0.14], [-0.09, 0.15], [0.09, 0.15]]) {
+    const patte = new THREE.Mesh(legGeo, furM);
+    patte.position.set(lx, 0.13, lz);
+    patte.castShadow = true;
+    group.add(patte);
+  }
+
+  // queue (animée : elle remue !)
+  const queue = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.2, 4, 8), furM);
+  queue.position.set(0, 0.42, 0.26);
+  queue.rotation.x = -0.9;
+  queue.castShadow = true;
+  group.add(queue);
+
+  // petite étiquette 🐾
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 96;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(13, 17, 28, 0.75)';
+  ctx.beginPath();
+  ctx.roundRect(8, 8, 240, 80, 22);
+  ctx.fill();
+  ctx.strokeStyle = '#c22e2e';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = '#f4f6fb';
+  ctx.font = '600 40px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`🐾 ${name}`, 128, 62);
+  const tex = new THREE.CanvasTexture(c);
+  const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.75, depthWrite: false }));
+  label.scale.set(0.72, 0.27, 1);
+  label.position.y = 0.95;
+  group.add(label);
+
+  const state = { t: Math.random() * 10 };
+  return {
+    group,
+    update(dt, camera) {
+      state.t += dt;
+      // la queue remue, la tête se penche, le corps respire
+      queue.rotation.z = Math.sin(state.t * 7) * 0.45;
+      head.rotation.z = Math.sin(state.t * 0.7) * 0.1;
+      head.rotation.y = Math.sin(state.t * 0.4) * 0.35;
+      body.scale.x = 1 + Math.sin(state.t * 2.2) * 0.02;
       if (camera) label.quaternion.copy(camera.quaternion);
     },
   };

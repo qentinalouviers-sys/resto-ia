@@ -13,19 +13,18 @@ space** où travaille le reste de l'équipe. Chaque membre est un personnage hum
 
 | Agent | Rôle | Spécialités |
 |---|---|---|
-| 👩‍💼 **Nova** | Directrice Générale | Stratégie, priorisation, coordination de l'équipe (orchestratrice) |
-| 🍕 **Enzo** | Chef Pizzaïolo | Pâte napolitaine, carte, coûts matière, HACCP — en cuisine devant le four |
-| 🍽️ **Sacha** | Serveur | Accueil, service en salle, avis clients, réservations — plateau à la main |
-| 🧮 **Marc** | Comptable | Compta, TVA, trésorerie, prévisionnels |
-| ⚖️ **Camille** | Avocate | Contrats, propriété intellectuelle, contentieux |
-| 📚 **Sofia** | Juriste | RGPD, conformité, mentions légales, réglementation restauration |
-| 💻 **Théo** | Développeur Web | Sites, apps, APIs, automatisations |
-| 📣 **Léa** | Marketing | Marque, réseaux sociaux, campagnes, growth |
-| 🤝 **Yasmine** | Ressources Humaines | Recrutement, contrats de travail, convention HCR |
+| 👑 **Anibal** | Le Boss | Il gère tout le monde : stratégie, décisions, coordination (orchestrateur) |
+| 🍕 **Yohan** | Pizzaïolo | Pâte napolitaine, carte, coûts matière, HACCP — en cuisine devant le four |
+| 🧮 **Justine** | Comptable | Compta, TVA, trésorerie, prévisionnels |
+| ⚖️ **Eva** | Juriste | Contrats, RGPD, conformité, réglementation restauration |
+| 📣 **Théo** | Marketing | Marque, réseaux sociaux, campagnes, growth |
 | 📈 **Hugo** | Commercial | Prospection, argumentaires, négociation |
+| 🛠️ **Sébastien** | Travaux & Rénovation | Chantiers, agencement, devis, normes ERP — casque sur la tête |
+| 🐾 **Joy** | Mascotte | Labrador noir de l'équipe — décorative, elle remue la queue près d'Anibal |
 
-Nova joue le rôle de « cheffe d'orchestre » : posez-lui une question transverse et elle
+Anibal joue le rôle de « chef d'orchestre » : posez-lui une question transverse et il
 synthétise le point de vue de chaque spécialiste (esprit « sous-agents » de Hermes).
+En réunion, il parle toujours en dernier pour trancher.
 
 ## 🚀 Lancement
 
@@ -199,7 +198,7 @@ Le décor se modifie dans `js/office.js`, les personnages dans `js/characters.js
 - 🖱️ Survolez un personnage → il s'illumine ; cliquez → la caméra zoome et le chat s'ouvre
 - 🤝 **Mode Réunion** : bouton « Réunion », sélectionnez plusieurs collaborateurs (anneau
   lumineux à leurs pieds), puis lancez la discussion groupée — chaque agent donne son avis
-  à tour de rôle selon ses compétences, sans répéter les autres, et si Nova participe elle
+  à tour de rôle selon ses compétences, sans répéter les autres, et si Anibal participe il
   conclut par une synthèse et les prochaines étapes
 - 💬 Streaming des réponses en direct, rendu Markdown (code, listes, titres)
 - 🗂️ Une conversation mémorisée par agent (localStorage), bouton « nouvelle conversation »

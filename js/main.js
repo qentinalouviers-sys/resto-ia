@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { AGENTS, getAgent } from './agents.js';
-import { createCharacter } from './characters.js';
+import { createCharacter, createDog } from './characters.js';
 import { buildOffice, buildLights } from './office.js';
 import { initChat, openChat, openMeeting, closeChat, isChatOpen } from './chat.js';
 import { initSettingsUI, loadSettings, isConfigured } from './settings.js';
@@ -201,6 +201,12 @@ function init3D() {
     pickables.push(ch.group);
   }
 
+  // Joy, le labrador noir — simple mascotte, pas cliquable
+  const joy = createDog('Joy');
+  joy.group.position.set(1.15, 0, -4.15);
+  joy.group.rotation.y = Math.PI * 0.9; // assise près d'Anibal, tournée vers la salle
+  scene.add(joy.group);
+
   // Anneaux de sélection (mode réunion) aux pieds des personnages
   const rings = new Map();
   for (const ch of characters) {
@@ -363,6 +369,7 @@ function init3D() {
 
     controls.update();
     for (const ch of characters) ch.update(dt, camera);
+    joy.update(dt, camera);
     // pulsation douce des anneaux de sélection
     const tt = clock.elapsedTime;
     for (const r of rings.values()) {

@@ -539,6 +539,86 @@ function buildDiningTable(withPizza) {
   return g;
 }
 
+// Coin chantier : escabeau, caisse à outils, peinture, planches
+function buildChantier() {
+  const g = new THREE.Group();
+  // escabeau en A
+  const alu = mat(0xb9c1c9, { metalness: 0.6, roughness: 0.4 });
+  for (const side of [-1, 1]) {
+    for (const lx of [-0.28, 0.28]) {
+      const montant = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.5, 0.05), alu);
+      montant.position.set(lx, 0.72, side * 0.3);
+      montant.rotation.x = side * 0.32;
+      montant.castShadow = true;
+      g.add(montant);
+    }
+  }
+  for (let i = 0; i < 4; i++) {
+    const marche = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.12), alu);
+    marche.position.set(0, 0.25 + i * 0.34, -0.3 + (0.25 + i * 0.34) * 0.33);
+    marche.castShadow = true;
+    g.add(marche);
+  }
+  const sommet = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.05, 0.22), alu);
+  sommet.position.set(0, 1.42, 0);
+  g.add(sommet);
+
+  // caisse à outils rouge
+  const caisse = new THREE.Group();
+  box(caisse, 0.5, 0.22, 0.26, mat(0xc0392b, { roughness: 0.5 }), 0, 0.11, 0);
+  const poignee = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.018, 8, 14, Math.PI), mat(0x2c2c31, { metalness: 0.5, roughness: 0.4 }));
+  poignee.position.set(0, 0.22, 0);
+  caisse.add(poignee);
+  // manche de marteau qui dépasse
+  const manche = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.3, 8), darkWoodM);
+  manche.position.set(0.15, 0.3, 0.02);
+  manche.rotation.z = -0.4;
+  caisse.add(manche);
+  caisse.position.set(0.85, 0, 0.55);
+  caisse.rotation.y = 0.5;
+  g.add(caisse);
+
+  // pots de peinture (dont un ouvert, jaune chantier)
+  for (const [px, pz, open] of [[-0.85, 0.6, true], [-1.05, 0.35, false]]) {
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.12, 0.24, 14), mat(0x8f9aa5, { metalness: 0.5, roughness: 0.4 }));
+    pot.position.set(px, 0.12, pz);
+    pot.castShadow = true;
+    g.add(pot);
+    if (open) {
+      const peinture = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.02, 14), mat(0xfacc15, { roughness: 0.4 }));
+      peinture.position.set(px, 0.245, pz);
+      g.add(peinture);
+      const pinceau = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.26, 0.02), darkWoodM);
+      pinceau.position.set(px + 0.1, 0.3, pz);
+      pinceau.rotation.z = -0.5;
+      g.add(pinceau);
+    }
+  }
+
+  // planches appuyées contre le mur
+  for (let i = 0; i < 3; i++) {
+    const planche = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.0, 0.03), woodM);
+    planche.position.set(1.6 + i * 0.08, 0.95, -0.75 + i * 0.1);
+    planche.rotation.x = -0.28;
+    planche.rotation.y = 0.15;
+    planche.castShadow = true;
+    g.add(planche);
+  }
+
+  // panneau « travaux » au sol
+  const panneau = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.02), mat(0xfacc15, { roughness: 0.5 }));
+  panneau.position.set(-0.2, 0.35, 0.95);
+  panneau.rotation.x = -0.25;
+  panneau.rotation.y = 2.6;
+  panneau.castShadow = true;
+  g.add(panneau);
+  const bande = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.022), mat(0x1d1d22));
+  bande.position.copy(panneau.position);
+  bande.rotation.copy(panneau.rotation);
+  g.add(bande);
+  return g;
+}
+
 // Cloison basse végétalisée entre le restaurant et l'open space
 function buildDivider() {
   const g = new THREE.Group();
@@ -808,11 +888,16 @@ export function buildOffice(scene, agents) {
     bulbs.push(bulb);
   }
 
-  // Postes de travail des agents (les agents du restaurant n'ont pas
-  // de bureau : leur poste, c'est la cuisine ou la salle)
+  // Coin chantier de Sébastien (zone droite de l'open space)
+  const chantier = buildChantier();
+  chantier.position.set(5.6, 0, -4.3);
+  root.add(chantier);
+
+  // Postes de travail des agents (les agents « en zone » — cuisine,
+  // chantier — n'ont pas de bureau : leur poste est dans le décor)
   const deskGroups = new Map();
   for (const agent of agents) {
-    if (agent.zone === 'resto') continue;
+    if (agent.zone) continue;
     const dg = buildDesk(agent);
     dg.position.set(agent.desk.x, 0, agent.desk.z);
     dg.rotation.y = agent.desk.ry;

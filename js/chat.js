@@ -206,7 +206,10 @@ function renderConversation() {
         <h3>Réunion d'équipe</h3>
         <p class="participants">${currentMeeting.map((m) =>
           `<span class="participant" style="--accent:${m.accent}">${m.emoji} ${m.nom}</span>`).join(' ')}</p>
-        <p>Posez votre question : chacun donnera son avis selon ses compétences${currentMeeting.some((m) => m.id === 'nova') ? ', puis Nova fera la synthèse' : ''}.</p>
+        <p>Posez votre question : chacun donnera son avis selon ses compétences${(() => {
+          const boss = currentMeeting.find((m) => m.boss);
+          return boss ? `, puis ${boss.nom} fera la synthèse` : '';
+        })()}.</p>
         <div class="suggestions"></div>`;
       const sug = wel.querySelector('.suggestions');
       for (const s of [
@@ -450,9 +453,9 @@ Tu participes à une réunion d'équipe avec ${others || 'toi seul'}.
 - Donne TON avis selon tes compétences de ${agent.role}, en 150 mots maximum.
 - Sois concret et complémentaire : ne répète pas ce que les collègues ont déjà dit avant toi.
 - Si le sujet ne relève pas de ton domaine, dis-le en une phrase et cède la parole.`;
-  if (agent.id === 'nova') {
+  if (agent.boss) {
     extra += `
-- Tu interviens en DERNIER : fais une synthèse courte des avis exprimés, tranche, et termine par les prochaines étapes concrètes.`;
+- Tu es le boss et tu interviens en DERNIER : fais une synthèse courte des avis exprimés, tranche, et termine par les prochaines étapes concrètes.`;
   }
   return agent.systemPrompt + extra;
 }
@@ -480,10 +483,10 @@ async function runMeetingRound(text) {
   const settings = prepareUserTurn(MEETING_KEY, text);
   if (!settings) return;
 
-  // Nova (la directrice) parle toujours en dernier pour synthétiser
+  // Le boss parle toujours en dernier pour synthétiser
   const ordered = [
-    ...members.filter((m) => m.id !== 'nova'),
-    ...members.filter((m) => m.id === 'nova'),
+    ...members.filter((m) => !m.boss),
+    ...members.filter((m) => m.boss),
   ];
 
   setBusy(true);
