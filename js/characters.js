@@ -88,7 +88,26 @@ function buildHair(head, style, color, headR) {
 }
 
 // --- Accessoires ----------------------------------------------
-function buildAccessories(head, torso, acc, headR, accent) {
+function buildAccessories(head, torso, acc, headR, accent, cfg) {
+  if (acc.toque) {
+    const tm = mat(0xf7f4ee, { roughness: 0.85 });
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(headR * 0.78, headR * 0.86, headR * 0.75, 16), tm);
+    base.position.y = headR * 0.82;
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.88, 14, 10), tm);
+    puff.position.y = headR * 1.28;
+    puff.scale.y = 0.62;
+    head.add(base, puff);
+  }
+  if (acc.apron) {
+    const am = mat(cfg?.apronColor ?? 0x8a2f2f, { roughness: 0.95 });
+    const bib = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.34, 0.02), am);
+    bib.position.set(0, -0.02, -0.2);
+    bib.rotation.x = -0.06;
+    torso.add(bib);
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.16, 0.015), am);
+    strap.position.set(0, 0.19, -0.19);
+    torso.add(strap);
+  }
   if (acc.glasses) {
     const gm = mat(0x18181f, { roughness: 0.35, metalness: 0.35 });
     const lens = new THREE.TorusGeometry(headR * 0.3, headR * 0.05, 8, 18);
@@ -194,7 +213,7 @@ export function createCharacter(agent) {
   head.add(eL, eR, bL, bR, mouth);
 
   buildHair(head, cfg.hairStyle, cfg.hairColor, headR);
-  buildAccessories(head, torso, cfg.accessories || {}, headR, accent);
+  buildAccessories(head, torso, cfg.accessories || {}, headR, accent, cfg);
 
   // Bras (épaule -> avant, posture différente assis/debout)
   const armGeo = new THREE.CapsuleGeometry(0.055, 0.3, 4, 10);
@@ -211,6 +230,30 @@ export function createCharacter(agent) {
       arm.rotation.x = -Math.PI / 2.6;
       arm.rotation.z = side * 0.12;
       hand.position.set(side * 0.2, hipY + 0.16, -0.38);
+    } else if (cfg.accessories?.tray && side === 1) {
+      // bras plié : le serveur porte son plateau à hauteur d'épaule
+      arm.position.set(side * 0.26, shoulderY - 0.06, -0.04);
+      arm.rotation.x = -Math.PI / 2.1;
+      arm.rotation.z = side * 0.25;
+      hand.position.set(side * 0.3, shoulderY + 0.1, -0.16);
+      const trayG = new THREE.Group();
+      const plateau = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.018, 20), mat(0x2e3038, { roughness: 0.35, metalness: 0.5 }));
+      trayG.add(plateau);
+      // pizza sur le plateau
+      const pate = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.125, 0.02, 18), mat(0xe0aa5f, { roughness: 0.8 }));
+      pate.position.y = 0.02;
+      const sauce = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.012, 18), mat(0xc63d2a, { roughness: 0.75 }));
+      sauce.position.y = 0.032;
+      trayG.add(pate, sauce);
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + 0.5;
+        const mozza = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.012, 8), mat(0xf6f0dc, { roughness: 0.7 }));
+        mozza.position.set(Math.cos(a) * 0.06, 0.042, Math.sin(a) * 0.06);
+        trayG.add(mozza);
+      }
+      trayG.position.set(side * 0.3, shoulderY + 0.13, -0.16);
+      trayG.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      group.add(trayG);
     } else {
       // un bras le long du corps, l'autre tient la tablette
       const holding = cfg.accessories?.tablet && side === 1;

@@ -1,10 +1,12 @@
 # 🏢 Resto IA — Le Bureau
 
-**Votre startup d'agents IA, dans un open space 3D.**
+**Votre restaurant + votre startup d'agents IA, dans une salle 3D.**
 
-Une web UI 100 % en français inspirée de l'esprit [Hermes Agent](https://hermes-agent.nousresearch.com) :
-la page d'accueil est un bureau moderne « geek » en 3D dans lequel chaque membre de
-votre équipe virtuelle est un personnage humain stylisé, assis à son poste de travail.
+Une web UI 100 % en français inspirée de l'esprit [Hermes Agent](https://hermes-agent.nousresearch.com).
+La page d'accueil est une salle 3D en deux zones : devant, **le restaurant** — sol en
+damier, tables de bistrot, cuisine ouverte et **four à pizza napolitain en dôme, couvert
+de petite faïence or à joints noirs** — et derrière une cloison végétalisée, **l'open
+space** où travaille le reste de l'équipe. Chaque membre est un personnage humain stylisé.
 **Cliquez sur un collaborateur pour ouvrir le chat avec le bon profil.**
 
 ## 👥 L'équipe
@@ -12,6 +14,8 @@ votre équipe virtuelle est un personnage humain stylisé, assis à son poste de
 | Agent | Rôle | Spécialités |
 |---|---|---|
 | 👩‍💼 **Nova** | Directrice Générale | Stratégie, priorisation, coordination de l'équipe (orchestratrice) |
+| 🍕 **Enzo** | Chef Pizzaïolo | Pâte napolitaine, carte, coûts matière, HACCP — en cuisine devant le four |
+| 🍽️ **Sacha** | Serveur | Accueil, service en salle, avis clients, réservations — plateau à la main |
 | 🧮 **Marc** | Comptable | Compta, TVA, trésorerie, prévisionnels |
 | ⚖️ **Camille** | Avocate | Contrats, propriété intellectuelle, contentieux |
 | 📚 **Sofia** | Juriste | RGPD, conformité, mentions légales, réglementation restauration |
@@ -175,8 +179,10 @@ Le décor se modifie dans `js/office.js`, les personnages dans `js/characters.js
 
 ## ✨ Fonctionnalités
 
-- 🏢 Open space 3D : bureaux, écrans animés par métier, néon, baies vitrées avec
-  ville nocturne, canapé, borne d'arcade, machine à café, plantes…
+- 🍕 Restaurant 3D : four napolitain en dôme (petite faïence or, joints noirs, braises),
+  cuisine ouverte, néon PIZZERIA, tables de bistrot, ardoise menu, sol en damier
+- 🏢 Open space derrière la cloison végétalisée : bureaux, écrans animés par métier,
+  néon, baies vitrées avec ville nocturne, borne d'arcade, machine à café, plantes…
 - 🖱️ Survolez un personnage → il s'illumine ; cliquez → la caméra zoome et le chat s'ouvre
 - 💬 Streaming des réponses en direct, rendu Markdown (code, listes, titres)
 - 🗂️ Une conversation mémorisée par agent (localStorage), bouton « nouvelle conversation »
