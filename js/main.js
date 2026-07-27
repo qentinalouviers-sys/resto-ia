@@ -1,0 +1,237 @@
+// ============================================================
+//  Point d'entrée : scène 3D, caméra, interactions, liaison UI.
+// ============================================================
+
+import * as THREE from 'three';
+import { OrbitControls } from '../vendor/OrbitControls.js';
+import { AGENTS, getAgent } from './agents.js';
+import { createCharacter } from './characters.js';
+import { buildOffice, buildLights } from './office.js';
+import { initChat, openChat, closeChat, isChatOpen } from './chat.js';
+import { initSettingsUI, loadSettings, isConfigured } from './settings.js';
+
+const canvasHost = document.getElementById('scene');
+const loadingEl = document.getElementById('loading');
+const tooltipEl = document.getElementById('tooltip');
+
+// --- Détection WebGL -------------------------------------------
+function webglAvailable() {
+  try {
+    const c = document.createElement('canvas');
+    return Boolean(c.getContext('webgl2') || c.getContext('webgl'));
+  } catch (_) { return false; }
+}
+
+// --- UI commune (chat + réglages + barre d'équipe) --------------
+const settingsUI = initSettingsUI(() => {});
+initChat({
+  openSettings: settingsUI.open,
+  onClose: () => focusOverview(),
+});
+
+const teamBar = document.getElementById('team-bar');
+for (const agent of AGENTS) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'team-chip';
+  btn.style.setProperty('--accent', agent.accent);
+  btn.innerHTML = `<span class="chip-emoji">${agent.emoji}</span><span class="chip-txt"><strong>${agent.nom}</strong><small>${agent.role}</small></span>`;
+  btn.addEventListener('click', () => selectAgent(agent.id));
+  teamBar.appendChild(btn);
+}
+
+if (!isConfigured(loadSettings())) {
+  document.getElementById('config-banner').classList.add('visible');
+  document.getElementById('banner-settings').addEventListener('click', settingsUI.open);
+}
+document.getElementById('banner-close')?.addEventListener('click', () => {
+  document.getElementById('config-banner').classList.remove('visible');
+});
+
+// --- Scène 3D ----------------------------------------------------
+let focusAgentCamera = null;
+let focusOverview = () => {};
+
+function selectAgent(id) {
+  const agent = getAgent(id);
+  if (!agent) return;
+  focusAgentCamera?.(agent);
+  openChat(agent);
+}
+
+// --- Mode secours sans WebGL ------------------------------------
+if (!webglAvailable()) {
+  loadingEl.remove();
+  document.getElementById('fallback').classList.add('visible');
+  document.body.classList.add('no-3d');
+} else {
+  init3D();
+}
+
+function init3D() {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  canvasHost.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0d18);
+  scene.fog = new THREE.Fog(0x0a0d18, 26, 44);
+
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.maxPolarAngle = Math.PI * 0.49;
+  controls.minPolarAngle = Math.PI * 0.12;
+  controls.minDistance = 3;
+  controls.maxDistance = 24;
+  controls.enablePan = false;
+  controls.target.set(0, 1, 0);
+
+  buildLights(scene);
+  buildOffice(scene, AGENTS);
+
+  // Personnages
+  const characters = [];
+  const pickables = [];
+  for (const agent of AGENTS) {
+    const ch = createCharacter(agent);
+    const d = agent.desk;
+    ch.group.position.set(d.x, 0, d.z);
+    ch.group.rotation.y = d.ry;
+    if (agent.pose === 'sit') {
+      // place le personnage sur la chaise (décalé derrière le bureau, en local +z)
+      ch.group.position.x += Math.sin(d.ry) * 0.62;
+      ch.group.position.z += Math.cos(d.ry) * 0.62;
+    }
+    scene.add(ch.group);
+    ch.group.traverse((o) => { o.userData.agentId = agent.id; });
+    characters.push(ch);
+    pickables.push(ch.group);
+  }
+
+  // --- Caméra : intro + focus agent -----------------------------
+  const OVERVIEW = { pos: new THREE.Vector3(7.4, 5.0, 9.2), target: new THREE.Vector3(0, 0.9, 0) };
+  camera.position.set(16, 13, 20);
+  let camAnim = null;
+
+  function animateCameraTo(pos, target, duration = 1.2) {
+    camAnim = {
+      fromPos: camera.position.clone(),
+      toPos: pos.clone(),
+      fromTgt: controls.target.clone(),
+      toTgt: target.clone(),
+      t: 0,
+      duration,
+    };
+  }
+
+  focusAgentCamera = (agent) => {
+    const d = agent.desk;
+    const charPos = new THREE.Vector3(d.x, 1.1, d.z);
+    // direction vers laquelle le personnage regarde (local -Z tourné de ry)
+    const facing = new THREE.Vector3(-Math.sin(d.ry), 0, -Math.cos(d.ry));
+    const camPos = charPos.clone()
+      .add(facing.clone().multiplyScalar(2.6))
+      .add(new THREE.Vector3(0, 0.9, 0));
+    // garde la caméra dans la pièce
+    camPos.x = THREE.MathUtils.clamp(camPos.x, -9, 9);
+    camPos.z = THREE.MathUtils.clamp(camPos.z, -6.6, 7);
+    animateCameraTo(camPos, charPos, 1.1);
+  };
+
+  focusOverview = () => animateCameraTo(OVERVIEW.pos, OVERVIEW.target, 1.1);
+
+  // Intro
+  animateCameraTo(OVERVIEW.pos, OVERVIEW.target, 2.2);
+
+  document.getElementById('btn-overview').addEventListener('click', () => {
+    if (isChatOpen()) closeChat();
+    else focusOverview();
+  });
+
+  // --- Survol / clic ---------------------------------------------
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let hovered = null;
+  let pointerDown = { x: 0, y: 0, moved: false };
+
+  function pick(clientX, clientY) {
+    pointer.x = (clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(pickables, true);
+    return hits.length ? hits[0].object.userData.agentId : null;
+  }
+
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    const id = pick(e.clientX, e.clientY);
+    if (id !== hovered) {
+      hovered = id;
+      for (const ch of characters) ch.setHighlight(ch.agent.id === id);
+      renderer.domElement.style.cursor = id ? 'pointer' : 'grab';
+      if (id) {
+        const a = getAgent(id);
+        tooltipEl.innerHTML = `<strong>${a.emoji} ${a.nom}</strong> — ${a.role}<br><small>Cliquez pour discuter</small>`;
+        tooltipEl.classList.add('visible');
+      } else {
+        tooltipEl.classList.remove('visible');
+      }
+    }
+    if (hovered) {
+      tooltipEl.style.left = `${e.clientX + 16}px`;
+      tooltipEl.style.top = `${e.clientY + 16}px`;
+    }
+    if (Math.abs(e.clientX - pointerDown.x) + Math.abs(e.clientY - pointerDown.y) > 6) {
+      pointerDown.moved = true;
+    }
+  });
+
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    pointerDown = { x: e.clientX, y: e.clientY, moved: false };
+  });
+
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (pointerDown.moved) return; // c'était une rotation de caméra
+    const id = pick(e.clientX, e.clientY);
+    if (id) selectAgent(id);
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // --- Boucle de rendu --------------------------------------------
+  const clock = new THREE.Clock();
+  let firstFrame = true;
+
+  renderer.setAnimationLoop(() => {
+    const dt = Math.min(clock.getDelta(), 0.05);
+
+    if (camAnim) {
+      camAnim.t += dt / camAnim.duration;
+      const k = camAnim.t >= 1 ? 1 : 1 - Math.pow(1 - camAnim.t, 3); // easing cubic-out
+      camera.position.lerpVectors(camAnim.fromPos, camAnim.toPos, k);
+      controls.target.lerpVectors(camAnim.fromTgt, camAnim.toTgt, k);
+      if (camAnim.t >= 1) camAnim = null;
+    }
+
+    controls.update();
+    for (const ch of characters) ch.update(dt, camera);
+    renderer.render(scene, camera);
+
+    if (firstFrame) {
+      firstFrame = false;
+      loadingEl.classList.add('done');
+      setTimeout(() => loadingEl.remove(), 700);
+    }
+  });
+}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resto IA — Le Bureau · Votre startup d'agents IA</title>
+  <meta name="description" content="Votre équipe d'agents IA dans un open space 3D : comptable, avocate, juriste, développeur, marketing… Cliquez sur un collaborateur pour discuter.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+
+  <!-- Scène 3D -->
+  <div id="scene"></div>
+
+  <!-- Écran de chargement -->
+  <div id="loading">
+    <div class="loader-logo">🏢</div>
+    <div class="loader-title">Resto IA — Le Bureau</div>
+    <div class="loader-sub">Installation de l'équipe dans l'open space…</div>
+    <div class="loader-bar"><span></span></div>
+  </div>
+
+  <!-- En-tête -->
+  <header id="hud">
+    <div class="brand">
+      <span class="brand-logo">🏢</span>
+      <div class="brand-txt">
+        <strong>Resto IA</strong>
+        <small>Le Bureau — votre équipe d'agents IA</small>
+      </div>
+    </div>
+    <div class="hud-actions">
+      <button type="button" id="btn-overview" class="hud-btn" title="Revenir à la vue d'ensemble">🗺️ Vue d'ensemble</button>
+      <button type="button" id="btn-settings" class="hud-btn" title="Configurer l'API">⚙️ Réglages</button>
+    </div>
+  </header>
+
+  <!-- Astuce -->
+  <div id="hint">💡 Faites pivoter la pièce à la souris, puis <strong>cliquez sur un collaborateur</strong> pour ouvrir la discussion.</div>
+
+  <!-- Bandeau première configuration -->
+  <div id="config-banner">
+    <span>👋 Bienvenue ! Pour discuter avec l'équipe, connectez d'abord votre API (Hermes, Open WebUI, Ollama…).</span>
+    <button type="button" id="banner-settings" class="hud-btn accent">⚙️ Configurer</button>
+    <button type="button" id="banner-close" class="banner-x" aria-label="Fermer">✕</button>
+  </div>
+
+  <!-- Barre d'équipe (accès rapide + secours mobile) -->
+  <nav id="team-bar" aria-label="Équipe"></nav>
+
+  <!-- Info-bulle de survol -->
+  <div id="tooltip"></div>
+
+  <!-- Mode secours sans WebGL -->
+  <div id="fallback">
+    <h2>🏢 Resto IA — Le Bureau</h2>
+    <p>Votre navigateur ne prend pas en charge la 3D (WebGL). Pas de panique : choisissez un collaborateur ci-dessous.</p>
+  </div>
+
+  <!-- Panneau de chat -->
+  <aside id="chat-panel" aria-label="Discussion">
+    <header class="chat-header">
+      <div id="chat-avatar" class="chat-avatar"></div>
+      <div class="chat-id">
+        <strong id="chat-title"></strong>
+        <small id="chat-role"></small>
+      </div>
+      <button type="button" id="chat-reset" class="icon-btn" title="Nouvelle conversation">🗑️</button>
+      <button type="button" id="chat-close" class="icon-btn" title="Fermer">✕</button>
+    </header>
+    <div id="chat-messages"></div>
+    <form id="chat-form">
+      <textarea id="chat-input" rows="1" placeholder="Écrivez votre message…" autocomplete="off"></textarea>
+      <button type="submit" id="chat-send" class="send-btn" title="Envoyer">➤</button>
+      <button type="button" id="chat-stop" class="send-btn stop" title="Arrêter la génération" hidden>◼</button>
+    </form>
+  </aside>
+
+  <!-- Réglages -->
+  <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <form id="settings-form" class="settings-card">
+      <header>
+        <h2 id="settings-title">⚙️ Réglages de l'API</h2>
+        <button type="button" id="settings-close" class="icon-btn" aria-label="Fermer">✕</button>
+      </header>
+      <p class="settings-intro">Connectez n'importe quel serveur compatible OpenAI : <strong>Hermes (Nous Research)</strong>, Open WebUI, Ollama, etc. Vos réglages restent dans votre navigateur.</p>
+
+      <label for="set-preset">Fournisseur</label>
+      <select id="set-preset"></select>
+      <p id="set-hint" class="field-hint"></p>
+
+      <label for="set-url">URL de base de l'API</label>
+      <input type="url" id="set-url" placeholder="https://inference-api.nousresearch.com/v1" required>
+
+      <label for="set-key">Clé API <small>(laisser vide si non requise)</small></label>
+      <input type="password" id="set-key" placeholder="sk-…" autocomplete="off">
+
+      <label for="set-model">Modèle</label>
+      <input type="text" id="set-model" placeholder="Hermes-4-405B" required>
+
+      <label for="set-temp">Créativité (température) : <span id="set-temp-val">0.7</span></label>
+      <input type="range" id="set-temp" min="0" max="1.5" step="0.1" value="0.7">
+
+      <div id="set-status" class="set-status" role="status"></div>
+
+      <footer>
+        <button type="button" id="btn-test" class="hud-btn">🔌 Tester la connexion</button>
+        <button type="submit" class="hud-btn accent">💾 Enregistrer</button>
+      </footer>
+    </form>
+  </div>
+
+  <noscript>
+    <div class="noscript">Cette application nécessite JavaScript. Merci de l'activer pour rencontrer votre équipe. 🙂</div>
+  </noscript>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
