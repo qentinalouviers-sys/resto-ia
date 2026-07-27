@@ -48,10 +48,63 @@ compatible OpenAI (`POST /chat/completions`) :
 
 | Fournisseur | URL de base | Remarques |
 |---|---|---|
+| **Mon Hermes Agent (VPS)** | `http://<ip-du-vps>:8642/v1` | Voir la section suivante 👇 |
 | **Hermes — Nous Research** | `https://inference-api.nousresearch.com/v1` | Clé API sur [portal.nousresearch.com](https://portal.nousresearch.com) — modèles `Hermes-4-405B`, `Hermes-4-70B`… |
 | **Open WebUI** (local) | `http://localhost:3000/api` | Clé : Paramètres → Compte → Clés API |
 | **Ollama** (local) | `http://localhost:11434/v1` | `ollama pull hermes3` — aucune clé requise |
 | **OpenAI** | `https://api.openai.com/v1` | `gpt-4o-mini`, `gpt-4o`… |
+
+## 🖥️ Brancher votre propre Hermes Agent (VPS)
+
+[Hermes Agent](https://hermes-agent.nousresearch.com) expose une API compatible OpenAI
+(port `8642` par défaut, endpoint `/v1`). Dans `~/.hermes/.env` sur votre serveur :
+
+```bash
+API_SERVER_ENABLED=true
+API_SERVER_KEY=une-clé-longue-et-secrète      # OBLIGATOIRE (l'API donne accès aux outils de l'agent !)
+# API_SERVER_PORT=8642                        # port par défaut
+```
+
+Puis lancez `hermes gateway`. Deux façons d'y connecter l'interface :
+
+**Option A — recommandée : tout servir depuis le VPS via nginx (même origine, pas de CORS)**
+
+L'API Hermes reste liée à `127.0.0.1` (sa valeur par défaut, la plus sûre) et nginx sert
+l'interface tout en relayant `/v1` vers l'agent :
+
+```nginx
+server {
+    listen 80;
+    root /var/www/resto-ia;          # les fichiers de ce dépôt
+    index index.html;
+
+    location /v1/ {
+        proxy_pass http://127.0.0.1:8642/v1/;
+        proxy_buffering off;         # nécessaire pour le streaming SSE
+        proxy_read_timeout 300s;
+    }
+}
+```
+
+Dans ⚙️ Réglages, l'URL de base devient alors `http://<ip-du-vps>/v1`.
+
+**Option B — exposer directement le port 8642**
+
+Dans `~/.hermes/.env`, ajoutez :
+
+```bash
+API_SERVER_HOST=0.0.0.0
+API_SERVER_CORS_ORIGINS=http://<origine-de-l-interface>   # requis pour les appels navigateur
+```
+
+…et ouvrez le port 8642 dans le pare-feu. ⚠️ À réserver aux tests : l'API donne un accès
+complet aux outils de l'agent (y compris le terminal), protégée uniquement par la clé, et
+en HTTP la clé circule en clair. Préférez l'option A (ou ajoutez du TLS).
+
+> ℹ️ Le bouton « 🔌 Tester la connexion » des réglages interroge `/v1/models` et affiche
+> les noms de modèles annoncés par votre agent — pratique pour remplir le champ « Modèle ».
+> Hermes gère aussi des **profils** : chaque profil lance son propre serveur API sur un
+> port distinct et s'annonce sous son nom de profil comme modèle.
 
 Les réglages et les conversations restent **dans votre navigateur** (localStorage) —
 rien n'est envoyé ailleurs que vers l'API que vous configurez.

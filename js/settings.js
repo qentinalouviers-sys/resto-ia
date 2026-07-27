@@ -7,8 +7,14 @@
 const STORAGE_KEY = 'restoia.settings.v1';
 
 export const PRESETS = {
+  vps: {
+    label: 'Mon Hermes Agent (VPS OVH)',
+    baseUrl: 'http://145.239.73.53:8642/v1',
+    model: 'hermes',
+    hint: 'Clé = API_SERVER_KEY de votre ~/.hermes/.env — « Tester la connexion » affiche les modèles disponibles',
+  },
   hermes: {
-    label: 'Hermes — Nous Research',
+    label: 'Hermes — Nous Research (cloud)',
     baseUrl: 'https://inference-api.nousresearch.com/v1',
     model: 'Hermes-4-405B',
     hint: 'Créez une clé API sur portal.nousresearch.com',
@@ -40,10 +46,10 @@ export const PRESETS = {
 };
 
 const DEFAULTS = {
-  preset: 'hermes',
-  baseUrl: PRESETS.hermes.baseUrl,
+  preset: 'vps',
+  baseUrl: PRESETS.vps.baseUrl,
   apiKey: '',
-  model: PRESETS.hermes.model,
+  model: PRESETS.vps.model,
   temperature: 0.7,
 };
 
@@ -120,7 +126,19 @@ export function initSettingsUI(onSaved) {
       if (keyInput.value.trim()) headers.Authorization = `Bearer ${keyInput.value.trim()}`;
       const res = await fetch(`${urlInput.value.replace(/\/+$/, '')}/models`, { headers });
       if (res.ok) {
-        statusEl.textContent = '✅ Connexion réussie ! Le serveur répond.';
+        let names = [];
+        try {
+          const json = await res.json();
+          names = (json.data || []).map((m) => m.id).filter(Boolean);
+        } catch (_) { /* réponse non-JSON */ }
+        if (names.length) {
+          statusEl.textContent = `✅ Connexion réussie ! Modèles disponibles : ${names.slice(0, 6).join(', ')}`;
+          if (!modelInput.value.trim() || !names.includes(modelInput.value.trim())) {
+            modelInput.value = names[0];
+          }
+        } else {
+          statusEl.textContent = '✅ Connexion réussie ! Le serveur répond.';
+        }
         statusEl.className = 'set-status ok';
       } else {
         statusEl.textContent = `⚠️ Le serveur a répondu ${res.status}. Vérifiez l'URL et la clé API.`;
