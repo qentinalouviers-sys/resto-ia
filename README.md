@@ -20,7 +20,14 @@ space** où travaille le reste de l'équipe. Chaque membre est un personnage hum
 | 📣 **Théo** | Marketing | Marque, réseaux sociaux, campagnes, growth |
 | 📈 **Hugo** | Commercial | Prospection, argumentaires, négociation |
 | 🛠️ **Sébastien** | Travaux & Rénovation | Chantiers, agencement, devis, normes ERP — casque sur la tête |
+| ☀️ **Marie** | RDF Énergie — Études | Études solaires, rentabilité, aides, démarches (mairie, Enedis, Consuel) |
+| ⚡ **Romain** | RDF Énergie — Installation | Dimensionnement, pose, batteries, bornes de recharge |
 | 🐾 **Joy** | Mascotte | Labrador noir de l'équipe — décorative, elle remue la queue près d'Anibal |
+
+Marie et Romain occupent le petit bureau d'angle **RDF Énergie** (l'entreprise familiale
+de photovoltaïque basée en Gironde, certifiée RGE QualiPV) : enseigne lumineuse au
+soleil, panneau solaire d'exposition, maquette de maison équipée, batterie de stockage
+murale et borne de recharge.
 
 Anibal joue le rôle de « chef d'orchestre » : posez-lui une question transverse et il
 synthétise le point de vue de chaque spécialiste (esprit « sous-agents » de Hermes).

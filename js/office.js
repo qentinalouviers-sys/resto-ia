@@ -269,6 +269,39 @@ function screenTexture(kind, accent) {
           ctx.fillRect(cx + 16, 72 + i * 62, rnd(30, 70), 8);
         }
       }
+    } else if (kind === 'energie') {
+      // tableau de bord de production solaire
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.arc(46, 44, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3;
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(46 + Math.cos(a) * 26, 44 + Math.sin(a) * 26);
+        ctx.lineTo(46 + Math.cos(a) * 34, 44 + Math.sin(a) * 34);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#e6edf3';
+      ctx.font = '700 22px monospace';
+      ctx.fillText(`${(rnd(3, 9)).toFixed(1)} kWc`, 90, 40);
+      ctx.fillStyle = '#3fb950';
+      ctx.font = '600 15px monospace';
+      ctx.fillText(`autoconso ${Math.round(rnd(55, 90))}%`, 90, 62);
+      // courbe de production en cloche
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let x = 20; x < w - 20; x += 6) {
+        const p = (x - 20) / (w - 40);
+        const y = h - 34 - Math.sin(p * Math.PI) * rnd(95, 115);
+        x === 20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      // barres de production journalière
+      ctx.fillStyle = 'rgba(63, 185, 80, 0.75)';
+      for (let i = 0; i < 12; i++) {
+        const bh = rnd(12, 55);
+        ctx.fillRect(24 + i * ((w - 48) / 12), h - 26 - bh, (w - 48) / 12 - 6, bh);
+      }
     } else { // document
       ctx.fillStyle = '#f6f7f5';
       ctx.fillRect(60, 16, w - 120, h - 32);
@@ -619,6 +652,151 @@ function buildChantier() {
   return g;
 }
 
+// Enseigne RDF Énergie (soleil + texte)
+function rdfSignTexture() {
+  return canvasTexture(1024, 300, (ctx, w, h) => {
+    ctx.fillStyle = 'rgba(10, 16, 30, 0.92)';
+    ctx.beginPath();
+    ctx.roundRect(10, 10, w - 20, h - 20, 34);
+    ctx.fill();
+    ctx.strokeStyle = '#84cc16';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    // soleil
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.arc(130, h / 2, 52, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(130 + Math.cos(a) * 68, h / 2 + Math.sin(a) * 68);
+      ctx.lineTo(130 + Math.cos(a) * 92, h / 2 + Math.sin(a) * 92);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#f4f6fb';
+    ctx.font = '800 96px system-ui, sans-serif';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 22;
+    ctx.fillText('RDF ÉNERGIE', 260, 140);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#9fd44a';
+    ctx.font = '500 38px system-ui, sans-serif';
+    ctx.fillText('Photovoltaïque · Médoc & Sud-Ouest', 262, 214);
+  });
+}
+
+// Texture de cellules photovoltaïques (bleu nuit, quadrillage)
+function solarCellTexture() {
+  return canvasTexture(512, 320, (ctx, w, h) => {
+    ctx.fillStyle = '#0b1d3a';
+    ctx.fillRect(0, 0, w, h);
+    const cw = w / 8, chh = h / 5;
+    for (let y = 0; y < 5; y++) {
+      for (let x = 0; x < 8; x++) {
+        ctx.fillStyle = `hsl(216, 62%, ${16 + Math.random() * 7}%)`;
+        ctx.fillRect(x * cw + 4, y * chh + 4, cw - 8, chh - 8);
+        ctx.fillStyle = 'rgba(255,255,255,0.14)';
+        ctx.fillRect(x * cw + 7, y * chh + 7, cw * 0.4, 4);
+      }
+    }
+  });
+}
+
+// Le petit bureau d'angle RDF Énergie (décor solaire)
+function buildRdfCorner() {
+  const g = new THREE.Group();
+
+  // tapis vert énergie sous le coin
+  const rug = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.02, 26), mat(0x33502a, { roughness: 1 }));
+  rug.position.set(-8.1, 0.012, 5.6);
+  rug.receiveShadow = true;
+  g.add(rug);
+
+  // enseigne lumineuse sur le mur gauche
+  const sign = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.3, 0.97),
+    new THREE.MeshBasicMaterial({ map: rdfSignTexture(), transparent: true })
+  );
+  sign.rotation.y = Math.PI / 2;
+  sign.position.set(-ROOM.w / 2 + 0.13, 2.55, 5.6);
+  g.add(sign);
+  const signLight = new THREE.PointLight(0xfbbf24, 5, 5);
+  signLight.position.set(-ROOM.w / 2 + 0.8, 2.4, 5.6);
+  g.add(signLight);
+
+  // panneau solaire d'exposition (montage au sol incliné, comme sur
+  // une installation réelle : haut à l'arrière, bas à l'avant)
+  const expo = new THREE.Group();
+  const cells = new THREE.MeshStandardMaterial({ map: solarCellTexture(), roughness: 0.35, metalness: 0.3 });
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.05, 0.85), cells);
+  panel.position.y = 0.62;
+  panel.rotation.x = -0.55;
+  panel.castShadow = true;
+  expo.add(panel);
+  const alu = mat(0xb9c1c9, { metalness: 0.6, roughness: 0.4 });
+  for (const side of [-1, 1]) {
+    const legB = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.82, 0.05), alu);
+    legB.position.set(side * 0.52, 0.41, -0.3);
+    const legF = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.38, 0.05), alu);
+    legF.position.set(side * 0.52, 0.19, 0.3);
+    expo.add(legB, legF);
+  }
+  const traverse = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.05, 0.05), alu);
+  traverse.position.set(0, 0.36, 0);
+  expo.add(traverse);
+  expo.position.set(-6.7, 0, 6.5);
+  expo.rotation.y = 0.65; // tourné vers la caméra
+  g.add(expo);
+
+  // table d'appoint avec maquette de maison + panneaux sur le toit
+  const table = new THREE.Group();
+  box(table, 0.55, 0.5, 0.4, darkWoodM, 0, 0.25, 0);
+  const maison = new THREE.Group();
+  box(maison, 0.3, 0.18, 0.24, mat(0xefe6d5, { roughness: 0.9 }), 0, 0.6, 0);
+  const toit = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 0.16), mat(0x8c3b2e, { roughness: 0.85 }));
+  toit.position.set(0, 0.74, 0);
+  toit.rotation.z = 0; toit.rotation.x = Math.PI / 4;
+  toit.castShadow = true;
+  maison.add(toit);
+  for (const px of [-0.08, 0.04]) {
+    const mini = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.09), cells);
+    mini.position.set(px, 0.795, -0.062);
+    mini.rotation.x = -Math.PI / 4;
+    maison.add(mini);
+  }
+  table.add(maison);
+  table.position.set(-9.5, 0, 5.58);
+  g.add(table);
+
+  // batterie de stockage murale (LED verte)
+  const batt = new THREE.Group();
+  box(batt, 0.4, 0.62, 0.14, mat(0xf0f2f4, { roughness: 0.4 }), 0, 0, 0);
+  box(batt, 0.4, 0.1, 0.145, mat(0x84cc16, { roughness: 0.5 }), 0, 0.2, 0);
+  const led = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.02, 8), mat(0x22c55e, { emissive: 0x22c55e, emissiveIntensity: 1.6 }));
+  led.rotation.x = Math.PI / 2;
+  led.position.set(0.1, -0.05, 0.075);
+  batt.add(led);
+  batt.rotation.y = Math.PI / 2;
+  batt.position.set(-ROOM.w / 2 + 0.18, 1.15, 3.9);
+  g.add(batt);
+
+  // borne de recharge véhicule électrique
+  const borne = new THREE.Group();
+  box(borne, 0.28, 1.05, 0.16, mat(0xf0f2f4, { roughness: 0.4 }), 0, 0.53, 0);
+  const ecran = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.1), mat(0x06283a, { emissive: 0x06b6d4, emissiveIntensity: 0.7 }));
+  ecran.position.set(0, 0.82, 0.085);
+  borne.add(ecran);
+  const prise = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 10), mat(0x22262e, { roughness: 0.5 }));
+  prise.rotation.x = Math.PI / 2;
+  prise.position.set(0, 0.5, 0.09);
+  borne.add(prise);
+  borne.position.set(-5.75, 0, 7.0);
+  borne.rotation.y = 0.9;
+  g.add(borne);
+
+  return g;
+}
+
 // Cloison basse végétalisée entre le restaurant et l'open space
 function buildDivider() {
   const g = new THREE.Group();
@@ -847,7 +1025,7 @@ export function buildOffice(scene, agents) {
   shelf.position.set(-ROOM.w / 2 + 0.55, 0, -5.6);
   root.add(shelf);
 
-  for (const [px, pz, s] of [[-9, -6.6, 1.3], [9, -6.6, 1.2], [-9.2, 6.5, 1.1], [1.6, -6.3, 0.9], [9.2, 6.5, 1.0]]) {
+  for (const [px, pz, s] of [[-9, -6.6, 1.3], [9, -6.6, 1.2], [2.2, 6.8, 1.1], [1.6, -6.3, 0.9], [9.2, 6.5, 1.0]]) {
     const p = buildPlant(s);
     p.position.set(px, 0, pz);
     root.add(p);
@@ -892,6 +1070,9 @@ export function buildOffice(scene, agents) {
   const chantier = buildChantier();
   chantier.position.set(5.6, 0, -4.3);
   root.add(chantier);
+
+  // Petit bureau d'angle RDF Énergie (Marie & Romain, photovoltaïque)
+  root.add(buildRdfCorner());
 
   // Postes de travail des agents (les agents « en zone » — cuisine,
   // chantier — n'ont pas de bureau : leur poste est dans le décor)
