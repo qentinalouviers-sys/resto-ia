@@ -8,10 +8,10 @@ const STORAGE_KEY = 'restoia.settings.v1';
 
 export const PRESETS = {
   vps: {
-    label: 'Mon Hermes Agent (VPS OVH)',
-    baseUrl: 'http://145.239.73.53:8642/v1',
+    label: 'Mon Hermes Agent (ce serveur)',
+    baseUrl: '/v1',
     model: 'hermes',
-    hint: 'Clé = API_SERVER_KEY de votre ~/.hermes/.env — « Tester la connexion » affiche les modèles disponibles',
+    hint: 'Interface servie par votre VPS : /v1 est relayé vers Hermes. Clé = API_SERVER_KEY (affichée par install-vps.sh). « Tester la connexion » remplit le modèle automatiquement.',
   },
   hermes: {
     label: 'Hermes — Nous Research (cloud)',
@@ -47,7 +47,7 @@ export const PRESETS = {
 
 const DEFAULTS = {
   preset: 'vps',
-  baseUrl: PRESETS.vps.baseUrl,
+  baseUrl: '/v1',
   apiKey: '',
   model: PRESETS.vps.model,
   temperature: 0.7,

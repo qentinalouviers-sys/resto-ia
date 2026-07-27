@@ -56,6 +56,23 @@ compatible OpenAI (`POST /chat/completions`) :
 
 ## 🖥️ Brancher votre propre Hermes Agent (VPS)
 
+### ⚡ Installation automatique (recommandée)
+
+Sur votre VPS, une seule commande fait tout (interface + nginx + activation de
+l'API Hermes + génération de la clé) :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/qentinalouviers-sys/resto-ia/claude/hermes-agent-custom-ui-fagn0y/install-vps.sh | bash
+```
+
+> Le dépôt doit être accessible depuis le VPS (public, ou clonez-le d'abord à la main
+> puis lancez `bash install-vps.sh` depuis le dossier). Le script est réexécutable sans
+> danger : il met simplement à jour ce qui existe.
+
+À la fin, il affiche l'adresse à ouvrir et la clé API à coller dans ⚙️ Réglages.
+
+### Installation manuelle (si vous préférez comprendre chaque étape)
+
 [Hermes Agent](https://hermes-agent.nousresearch.com) expose une API compatible OpenAI
 (port `8642` par défaut, endpoint `/v1`). Dans `~/.hermes/.env` sur votre serveur :
 
