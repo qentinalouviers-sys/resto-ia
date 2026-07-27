@@ -16,7 +16,7 @@
   --font: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', sans-serif;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   height: 100%;
@@ -24,7 +24,10 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
+  overscroll-behavior: none;
 }
+
+button { touch-action: manipulation; }
 
 #scene { position: fixed; inset: 0; }
 #scene canvas { display: block; }
@@ -214,6 +217,7 @@ body.no-3d #team-bar {
 /* --- Panneau de chat ------------------------------------------- */
 #chat-panel {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 45;
+  height: 100vh; height: 100dvh;
   width: min(440px, 100vw);
   display: flex; flex-direction: column;
   background: rgba(13, 17, 30, 0.94);
@@ -386,10 +390,57 @@ body.no-3d #team-bar {
 }
 
 /* --- Mobile ------------------------------------------------------ */
-@media (max-width: 640px) {
+@media (max-width: 700px) {
+  /* HUD compact : boutons emoji seuls, gros et tapables */
   .brand-txt small { display: none; }
-  #hint { font-size: 12px; top: 66px; }
-  .hud-btn { font-size: 12.5px; padding: 8px 10px; }
-  #chat-panel { width: 100vw; }
-  #config-banner { flex-wrap: wrap; bottom: 110px; }
+  .brand { padding: 7px 11px; }
+  .brand-logo { font-size: 22px; }
+  .btn-label { display: none; }
+  .hud-btn { font-size: 18px; padding: 10px 13px; border-radius: 12px; }
+  #meeting-bar .hud-btn, .settings-card .hud-btn { font-size: 13.5px; }
+  #hint { font-size: 12.5px; top: 68px; padding: 8px 14px; }
+
+  /* Chat plein écran, adapté au clavier et à l'encoche */
+  #chat-panel { width: 100vw; border-left: none; }
+  .chat-header {
+    padding: 10px 12px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+  }
+  .chat-avatar { width: 40px; height: 40px; font-size: 20px; }
+  .icon-btn { font-size: 18px; padding: 10px 12px; }
+  #chat-messages { padding: 14px 12px; }
+  .bubble { max-width: 94%; font-size: 15px; }
+  .suggestion { padding: 13px 14px; font-size: 14.5px; }
+  #chat-form {
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+  /* 16px minimum : empêche le zoom automatique d'iOS sur le champ */
+  #chat-input { font-size: 16px; padding: 12px 14px; }
+  .send-btn { width: 46px; height: 46px; font-size: 18px; }
+
+  /* Barre d'équipe : plus grosse, avec marge pour la barre iPhone */
+  #team-bar {
+    gap: 9px; padding: 12px 14px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+  .team-chip { padding: 10px 13px; }
+  .chip-emoji { width: 38px; height: 38px; font-size: 22px; }
+  .chip-txt strong { font-size: 14px; }
+  .chip-txt small { font-size: 11px; }
+
+  #meeting-bar {
+    flex-wrap: wrap; justify-content: center;
+    bottom: 118px; width: 94vw; row-gap: 8px;
+  }
+  #config-banner { flex-wrap: wrap; bottom: 128px; }
+
+  /* Réglages : champs tapables, pas d'auto-zoom iOS */
+  .settings-card { padding: 18px; border-radius: 16px; }
+  .settings-card input[type="url"],
+  .settings-card input[type="text"],
+  .settings-card input[type="password"],
+  .settings-card select { font-size: 16px; padding: 12px; }
+  .settings-card footer { flex-direction: column-reverse; }
+  .settings-card footer .hud-btn { width: 100%; }
 }

@@ -14,6 +14,13 @@ const canvasHost = document.getElementById('scene');
 const loadingEl = document.getElementById('loading');
 const tooltipEl = document.getElementById('tooltip');
 
+// Écran tactile (mobile / tablette) : navigation et réglages adaptés
+const isTouch = window.matchMedia('(pointer: coarse)').matches;
+if (isTouch) {
+  document.getElementById('hint').innerHTML =
+    '💡 <strong>1 doigt</strong> : pivoter · <strong>pincer</strong> : zoomer · <strong>touchez un collaborateur</strong> pour discuter';
+}
+
 // --- Détection WebGL -------------------------------------------
 function webglAvailable() {
   try {
@@ -146,7 +153,7 @@ if (!webglAvailable()) {
 
 function init3D() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouch ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -162,15 +169,17 @@ function init3D() {
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.06;
+  controls.dampingFactor = isTouch ? 0.12 : 0.06;
+  controls.rotateSpeed = isTouch ? 0.55 : 1.0;
+  controls.zoomSpeed = isTouch ? 0.7 : 1.0;
   controls.maxPolarAngle = Math.PI * 0.49;
   controls.minPolarAngle = Math.PI * 0.12;
   controls.minDistance = 3;
-  controls.maxDistance = 24;
+  controls.maxDistance = 26;
   controls.enablePan = false;
   controls.target.set(0, 1, 0);
 
-  buildLights(scene);
+  buildLights(scene, { lowPower: isTouch });
   buildOffice(scene, AGENTS);
 
   // Personnages
@@ -215,7 +224,16 @@ function init3D() {
   };
 
   // --- Caméra : intro + focus agent -----------------------------
-  const OVERVIEW = { pos: new THREE.Vector3(7.4, 5.0, 9.2), target: new THREE.Vector3(0, 0.9, 0) };
+  // En portrait (mobile), on recule la caméra pour que la salle
+  // entière tienne dans l'écran étroit.
+  function overviewPose() {
+    const aspect = window.innerWidth / window.innerHeight;
+    const zoomOut = Math.min(2.1, Math.max(1, 1.15 / aspect));
+    return {
+      pos: new THREE.Vector3(7.4 * zoomOut, 5.0 * zoomOut, 9.2 * zoomOut),
+      target: new THREE.Vector3(0, 0.9, 0),
+    };
+  }
   camera.position.set(16, 13, 20);
   let camAnim = null;
 
@@ -235,19 +253,27 @@ function init3D() {
     const charPos = new THREE.Vector3(d.x, 1.1, d.z);
     // direction vers laquelle le personnage regarde (local -Z tourné de ry)
     const facing = new THREE.Vector3(-Math.sin(d.ry), 0, -Math.cos(d.ry));
+    const aspect = window.innerWidth / window.innerHeight;
+    const dist = aspect < 0.9 ? 3.6 : 2.6; // plus de recul en portrait
     const camPos = charPos.clone()
-      .add(facing.clone().multiplyScalar(2.6))
-      .add(new THREE.Vector3(0, 0.9, 0));
+      .add(facing.clone().multiplyScalar(dist))
+      .add(new THREE.Vector3(0, aspect < 0.9 ? 1.2 : 0.9, 0));
     // garde la caméra dans la pièce
     camPos.x = THREE.MathUtils.clamp(camPos.x, -9, 9);
     camPos.z = THREE.MathUtils.clamp(camPos.z, -6.6, 7);
     animateCameraTo(camPos, charPos, 1.1);
   };
 
-  focusOverview = () => animateCameraTo(OVERVIEW.pos, OVERVIEW.target, 1.1);
+  focusOverview = () => {
+    const o = overviewPose();
+    animateCameraTo(o.pos, o.target, 1.1);
+  };
 
   // Intro
-  animateCameraTo(OVERVIEW.pos, OVERVIEW.target, 2.2);
+  {
+    const o = overviewPose();
+    animateCameraTo(o.pos, o.target, 2.2);
+  }
 
   document.getElementById('btn-overview').addEventListener('click', () => {
     if (isChatOpen()) closeChat();
@@ -286,17 +312,22 @@ function init3D() {
       tooltipEl.style.left = `${e.clientX + 16}px`;
       tooltipEl.style.top = `${e.clientY + 16}px`;
     }
-    if (Math.abs(e.clientX - pointerDown.x) + Math.abs(e.clientY - pointerDown.y) > 6) {
+    if (Math.abs(e.clientX - pointerDown.x) + Math.abs(e.clientY - pointerDown.y) > tapTolerance) {
       pointerDown.moved = true;
     }
   });
 
+  // Au doigt, on tolère un léger tremblement pour reconnaître un « tap »
+  const tapTolerance = isTouch ? 18 : 6;
+
   renderer.domElement.addEventListener('pointerdown', (e) => {
-    pointerDown = { x: e.clientX, y: e.clientY, moved: false };
+    pointerDown = { x: e.clientX, y: e.clientY, moved: false, t: performance.now() };
   });
 
   renderer.domElement.addEventListener('pointerup', (e) => {
-    if (pointerDown.moved) return; // c'était une rotation de caméra
+    // c'était une rotation de caméra ou un appui long, pas un tap
+    if (pointerDown.moved) return;
+    if (pointerDown.t && performance.now() - pointerDown.t > 600) return;
     const id = pick(e.clientX, e.clientY);
     if (!id) return;
     if (selectionMode) toggleSelect(id);
@@ -315,6 +346,12 @@ function init3D() {
 
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.05);
+
+    // Sur mobile, le chat couvre tout l'écran : on met la 3D en pause
+    // pour économiser la batterie (le rendu reprend à la fermeture).
+    if (!firstFrame && window.innerWidth <= 700 && document.body.classList.contains('chat-open')) {
+      return;
+    }
 
     if (camAnim) {
       camAnim.t += dt / camAnim.duration;

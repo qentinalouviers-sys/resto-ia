@@ -135,11 +135,20 @@ function autoGrow() {
   els.input.style.height = Math.min(els.input.scrollHeight, 160) + 'px';
 }
 
+// Sur écran tactile, on ne force pas le focus : ça ouvrirait le
+// clavier (qui masque la moitié de l'écran) avant que l'utilisateur
+// ne le demande.
+const touchScreen = window.matchMedia('(pointer: coarse)').matches;
+
+function focusInput() {
+  if (!touchScreen) els.input.focus();
+}
+
 function showPanel() {
   els.panel.classList.add('visible');
   document.body.classList.add('chat-open');
   renderConversation();
-  setTimeout(() => els.input.focus(), 350);
+  setTimeout(focusInput, 350);
 }
 
 export function openChat(agent) {
@@ -416,7 +425,7 @@ async function sendSoloMessage(text) {
     setBusy(false);
     abortController = null;
     scrollBottom();
-    if (isChatOpen()) els.input.focus();
+    if (isChatOpen()) focusInput();
   }
 }
 
@@ -513,5 +522,5 @@ async function runMeetingRound(text) {
   setBusy(false);
   abortController = null;
   scrollBottom();
-  if (isChatOpen()) els.input.focus();
+  if (isChatOpen()) focusInput();
 }

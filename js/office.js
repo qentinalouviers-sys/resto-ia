@@ -823,7 +823,7 @@ export function buildOffice(scene, agents) {
   return { root, deskGroups, ROOM };
 }
 
-export function buildLights(scene) {
+export function buildLights(scene, opts = {}) {
   const ambient = new THREE.AmbientLight(0xbfc8e6, 0.55);
   scene.add(ambient);
   const hemi = new THREE.HemisphereLight(0xdde4ff, 0x3a3226, 0.5);
@@ -831,7 +831,8 @@ export function buildLights(scene) {
   const dir = new THREE.DirectionalLight(0xfff1dd, 1.6);
   dir.position.set(6, 9, 5);
   dir.castShadow = true;
-  dir.shadow.mapSize.set(2048, 2048);
+  const res = opts.lowPower ? 1024 : 2048; // ombres allégées sur mobile
+  dir.shadow.mapSize.set(res, res);
   dir.shadow.camera.left = -12;
   dir.shadow.camera.right = 12;
   dir.shadow.camera.top = 12;
