@@ -174,6 +174,46 @@ function menuTexture() {
   });
 }
 
+// Texte en points lumineux, style panneau LED
+function ledTexture(text, color) {
+  // 1) on échantillonne le texte sur une petite grille
+  const gw = 220, gh = 48;
+  const tmp = document.createElement('canvas');
+  tmp.width = gw; tmp.height = gh;
+  const tctx = tmp.getContext('2d');
+  tctx.font = '900 40px system-ui, sans-serif';
+  tctx.textAlign = 'center';
+  tctx.textBaseline = 'middle';
+  tctx.fillStyle = '#fff';
+  tctx.fillText(text, gw / 2, gh / 2 + 2);
+  const data = tctx.getImageData(0, 0, gw, gh).data;
+  const lit = [];
+  for (let y = 0; y < gh; y += 2) {
+    for (let x = 0; x < gw; x += 2) {
+      if (data[(y * gw + x) * 4 + 3] > 128) lit.push([x, y]);
+    }
+  }
+  // 2) puis on redessine chaque point comme une LED qui rayonne
+  return canvasTexture(2048, 448, (ctx, w, h) => {
+    const sx = w / gw, sy = h / gh;
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 16;
+    for (const [x, y] of lit) {
+      ctx.beginPath();
+      ctx.arc(x * sx, y * sy, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    for (const [x, y] of lit) {
+      ctx.beginPath();
+      ctx.arc(x * sx, y * sy, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
 function whiteboardTexture() {
   return canvasTexture(1024, 512, (ctx, w, h) => {
     ctx.fillStyle = '#f6f7f5';
@@ -958,28 +998,42 @@ export function buildOffice(scene, agents) {
     box(root, 0.06, 2.6, 0.14, blackM, wx + 1.35, 2.1, -ROOM.d / 2 + 0.13);
   }
 
-  // Néon "RESTO • IA" au centre du mur du fond
+  // Grand panneau LED « QENTINA » au centre du mur du fond
+  const ledPanel = box(root, 7.3, 1.62, 0.08, mat(0x0c0e15, { roughness: 0.6 }), 0, 3.12, -ROOM.d / 2 + 0.14);
+  ledPanel.receiveShadow = false;
+  const led = new THREE.Mesh(
+    new THREE.PlaneGeometry(7.1, 1.52),
+    new THREE.MeshBasicMaterial({ map: ledTexture('QENTINA', '#ff4fc3'), transparent: true })
+  );
+  led.position.set(0, 3.12, -ROOM.d / 2 + 0.19);
+  root.add(led);
+  const ledLight = new THREE.PointLight(0xff4fc3, 22, 12);
+  ledLight.position.set(0, 3.0, -ROOM.d / 2 + 1.0);
+  root.add(ledLight);
+
+  // Néon "RESTO • IA" déplacé sur le mur de droite
   const neon = new THREE.Mesh(
-    new THREE.PlaneGeometry(4.6, 1.15),
+    new THREE.PlaneGeometry(3.4, 0.85),
     new THREE.MeshBasicMaterial({ map: neonTexture('RESTO • IA', '#8b5cf6'), transparent: true })
   );
-  neon.position.set(0, 3.1, -ROOM.d / 2 + 0.15);
+  neon.rotation.y = -Math.PI / 2;
+  neon.position.set(ROOM.w / 2 - 0.13, 3.0, -0.6);
   root.add(neon);
-  const neonLight = new THREE.PointLight(0x8b5cf6, 14, 8);
-  neonLight.position.set(0, 3.0, -ROOM.d / 2 + 0.8);
+  const neonLight = new THREE.PointLight(0x8b5cf6, 8, 6);
+  neonLight.position.set(ROOM.w / 2 - 0.8, 2.9, -0.6);
   root.add(neonLight);
 
   // Tableau blanc près de la directrice
   const wb = new THREE.Group();
   box(wb, 2.1, 1.3, 0.05, mat(0xffffff, { map: whiteboardTexture(), roughness: 0.5 }), 0, 1.85, 0);
   box(wb, 2.2, 1.4, 0.03, metalM, 0, 1.85, -0.02);
-  wb.position.set(-2.8, 0, -ROOM.d / 2 + 0.16);
+  wb.position.set(-2.8, -0.12, -ROOM.d / 2 + 0.16); // légèrement abaissé sous le panneau QENTINA
   root.add(wb);
 
-  // Horloge murale
+  // Horloge murale (mur de droite, au-dessus de la borne d'arcade)
   const clock = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.05, 24), mat(0xf5f2ec, { roughness: 0.4 }));
-  clock.rotation.x = Math.PI / 2;
-  clock.position.set(2.8, 3.1, -ROOM.d / 2 + 0.15);
+  clock.rotation.z = Math.PI / 2;
+  clock.position.set(ROOM.w / 2 - 0.15, 3.1, -2.8);
   root.add(clock);
 
   // ================= LE RESTAURANT (zone avant) =================
