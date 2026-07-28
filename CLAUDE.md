@@ -29,7 +29,7 @@ plusieurs agents à tour de rôle.
 
 | Fichier | Rôle |
 |---|---|
-| `js/agents.js` | ⭐ Config des 9 agents (prompts FR, avatars, positions) : Anibal (boss, `boss: true`), Yohan (pizzaïolo), Justine (comptable), Eva (juriste), Théo (marketing), Hugo (commercial), Sébastien (travaux, `zone: 'chantier'`), Marie & Romain (RDF Énergie — vraie entreprise photovoltaïque de la famille, Cissac-Médoc/Gironde, RGE QualiPV, coin bureau dédié) |
+| `js/agents.js` | ⭐ Config des 10 agents (prompts FR, avatars, positions) : Anibal (boss, `boss: true`), Yohan (pizzaïolo), Justine (comptable), Eva (juriste), Théo (marketing), Hugo (commercial), Sébastien (travaux, `zone: 'chantier'`), Nour (OSINT/investigation en sources ouvertes — cadre légal RGPD/éthique intégré, outils 2025-2026), Marie & Romain (RDF Énergie — vraie entreprise photovoltaïque de la famille, Cissac-Médoc/Gironde, RGE QualiPV, coin bureau dédié) |
 | `js/characters.js` | Personnages 3D procéduraux (coiffures, accessoires : toque, casque de chantier, tablier…) + `createDog()` : Joy, le labrador noir décoratif |
 | `js/office.js` | Décor : restaurant (four napolitain doré, comptoir, tables) + open space + coin chantier |
 | `js/chat.js` | Chat solo + mode Réunion (tour de table, l'agent `boss: true` synthétise en dernier), streaming SSE |

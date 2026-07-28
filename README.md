@@ -20,6 +20,7 @@ space** où travaille le reste de l'équipe. Chaque membre est un personnage hum
 | 📣 **Théo** | Marketing | Marque, réseaux sociaux, campagnes, growth |
 | 📈 **Hugo** | Commercial | Prospection, argumentaires, négociation |
 | 🛠️ **Sébastien** | Travaux & Rénovation | Chantiers, agencement, devis, normes ERP — casque sur la tête |
+| 🕵️ **Nour** | OSINT — Sources ouvertes | Investigation légale : outils 2025-2026, méthodo, géoloc, cadre RGPD/éthique |
 | ☀️ **Marie** | RDF Énergie — Études | Études solaires, rentabilité, aides, démarches (mairie, Enedis, Consuel) |
 | ⚡ **Romain** | RDF Énergie — Installation | Dimensionnement, pose, batteries, bornes de recharge |
 | 🐾 **Joy** | Mascotte | Labrador noir de l'équipe — décorative, elle remue la queue près d'Anibal |
